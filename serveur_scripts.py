@@ -111,7 +111,7 @@ def main():
 
         def stop():
             serveur.server_close()
-            thread.join()
+            thread.join(5)
 
         schedule.every().day.at('01:30').do(update)
 
