@@ -21,7 +21,7 @@ handler.setLevel(logging.INFO)
 logger.addHandler(handler)
 
 
-def script_handler(racine: Path, chemins: tuple[Path]):
+def script_handler(racine: Path, chemins: set[Path]):
 
     class ScriptHTTPRequestHandler(SimpleHTTPRequestHandler):
 
@@ -31,11 +31,7 @@ def script_handler(racine: Path, chemins: tuple[Path]):
 
         def do_GET(self):
             chemin = Path(self.directory) / self.path[1:]
-
-            if chemin.name:
-                sortie = chemin.with_suffix('.txt')
-            else:
-                sortie = chemin
+            sortie = chemin.with_suffix('.txt') if chemin.name else chemin
 
             if chemin in chemins and sortie.exists():
                 self.send_response(200)
@@ -63,82 +59,75 @@ class Serveur(ThreadingHTTPServer):
         try:
             self.serve_forever()
         except KeyboardInterrupt:
-            pass
+            raise
         finally:
             self.server_close()
 
 
+def update(serveur: Serveur, modules: set, racine: Path):
+    # Noms des fichiers et modules existants
+    chemins = set(c for c in racine.glob('*.py'))
+    noms = set(x.stem for x in chemins)
+
+    # Retirer les modules non-existants
+    modules -= set(module for module in modules if module.__name__ not in noms)
+
+    # Recharger les modules pré-existants
+    modules |= set(map(reload, modules))
+
+    # Importer les nouveaux modules
+    vieux_noms = set(module.__name__ for module in modules)
+    modules |= set(map(import_module, vieux_noms))
+
+    # Programmer les fonctions
+    schedule.clear()
+    for module in modules:
+        module.logger.addHandler(handler)
+        schedule.every().hour.do(module.main)
+
+    # Mettre à jour le serveur
+    serveur.RequestHandlerClass = script_handler(racine, chemins)
+
+
+def stop(thread: Thread, serveur: Serveur):
+    serveur.server_close()
+    thread.join(5)
+    schedule.clear()
+
+
+def loop(serveur: Serveur, modules: set, racine: Path):
+    update(serveur, modules, racine)
+    thread = Thread(target=serveur)
+    try:
+        thread.start()  # Démarrer le serveur
+        schedule.run_all()  # Rouler toutes les fonctions une première fois
+
+        # Programmer la mise à jour des modules
+        schedule.every().day.at('01:30').do(update, serveur, modules, racine)
+
+        # Rouler les fonctions au besoin
+        # Le serveur roule dans une autre thread
+        while True:
+            schedule.run_pending()
+            time.sleep(0.5)
+    except KeyboardInterrupt:
+        stop(thread, serveur)
+        return input('Continuer? [oui|*] ') == 'oui'
+    finally:
+        stop(thread, serveur)
+
+    return False
+
+
 def main():
     racine = Path('./racine').resolve()
-
-    chemins = [c for c in racine.glob('*.py')]
-    serveur = Serveur(str(racine), chemins)
-
+    modules = set()
+    serveur = Serveur(str(racine), set())
     vieux_path = sys.path[:]
     try:
         sys.path.append(str(racine))
-        noms = [x.stem for x in racine.glob('*.py')]
-        logger.debug('noms = %s', noms)
-
-        modules = [import_module(x) for x in noms]
-        logger.debug('modules = %s', modules)
-
-        fonctions = [module.main for module in modules]
-        logger.debug('fonctions = %s', fonctions)
-
-        thread = Thread(target=serveur)
-        logger.debug('thread = %s', thread)
-
-        def update():
-            chemins = [c for c in racine.glob('*.py')]
-            nouveau_handler = script_handler(racine, chemins)
-            serveur.RequestHandlerClass = nouveau_handler
-
-            fichiers_python = [x.stem for x in racine.glob('*.py')]
-            nouveaux_noms = [x for x in fichiers_python if x not in noms]
-            anciens_noms = [x for x in noms if x not in fichiers_python]
-
-            anciens_index = [noms.index(x) for x in anciens_noms]
-            for i in anciens_index[::-1]:
-                modules.pop(i)
-
-            modules[:] = [reload(module) for module in modules]
-
-            for nn in nouveaux_noms:
-                modules.append(import_module(nn))
-
-            fonctions[:] = [module.main for module in modules]
-
-        def stop():
-            serveur.server_close()
-            thread.join(5)
-
-        schedule.every().day.at('01:30').do(update)
-
-        for fonction in fonctions:
-            schedule.every().hour.do(fonction)
-
-        try:
-            logger.info('Démarrer le serveur...')
-            thread.start()
-            logger.info('Serveur démarré.')
-
-            logger.info('Exécuter les fonctions une première fois...')
-            for fonction in fonctions:
-                logger.debug('%s', fonction)
-                fonction()
-
-            logger.info('Début de la boucle...')
-            while True:
-                schedule.run_pending()
-                time.sleep(0.5)
-            logger.info('Fin de la boucle.')
-        except KeyboardInterrupt:
-            logger.info('Sortie volontaire.')
-        finally:
-            logger.info('On ferme tout...')
-            stop()
-            logger.info('Le serveur est fermé.')
+        while loop(serveur, modules, racine):
+            continue
     finally:
         sys.path = vieux_path[:]
 

@@ -40,5 +40,8 @@ def main():
     if maintenant.weekday() == 4 \
             and maintenant.hour in (13, 14):
         logger.info('Mise à jour...')
-        formulaire.mise_à_jour()
-        logger.info('Mise à jour complétée.')
+        try:
+            formulaire.mise_à_jour()
+            logger.info('Mise à jour complétée.')
+        except Exception:
+            logger.exception('Erreur!')
