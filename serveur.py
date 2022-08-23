@@ -15,7 +15,7 @@ from typing import Callable
 
 # Journalisation
 journal = logging.getLogger(__name__)
-journal.setLevel(logging.WARNING)
+journal.setLevel(logging.DEBUG)
 # logging.basicConfig(level=logging.DEBUG)
 
 fmter = logging.Formatter(fmt='%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s',
@@ -28,7 +28,7 @@ handler.setLevel(logging.DEBUG)
 chemin = Path(__file__).with_suffix('.log')
 handler2 = logging.FileHandler(chemin, encoding='utf-8')
 handler2.setFormatter(fmter)
-handler2.setLevel(logging.WARNING)
+handler2.setLevel(logging.INFO)
 
 journal.addHandler(handler)
 journal.addHandler(handler2)
