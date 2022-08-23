@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """Créé le Wed Aug 17 14:15:04 2022 par emilejetzer."""
 
+import datetime
 import time
 import logging
 
 from pathlib import Path
-from datetime import datetime
 
 import getpass
 import keyring
@@ -13,21 +13,29 @@ import schedule
 
 import pandas as pd
 
-from canari import créer_journal, noter_exceptions
-
 from polygphys.outils.reseau import DisqueRéseau
 from polygphys.outils.journal import Repository
 
 from polygphys.admin.heures.heures import FeuilleDeTempsConfig, FeuilleDeTemps
 
+SORTIE = Path(__file__).with_suffix('.txt')
+logger = logging.getLogger(__name__)
+handler = logging.FileHandler(SORTIE, encoding='utf-8')
+fmter = logging.Formatter(fmt='[%(asctime)s] %(levelname)s: %(message)s',
+                          datefmt='%Y-%m-%d %H:%M')
+handler.setFormatter(fmter)
+handler.setLevel(logging.INFO)
+logger.addHandler(handler)
+
 
 def exporter(d: DisqueRéseau,
              config: FeuilleDeTempsConfig,
              feuille_de_temps: FeuilleDeTemps):
-    journal.info('Montage du disque au point %s', d.chemin)
+    logger.info('Montage du disque au point %s', d.chemin)
     git = Repository(d.chemin)
 
     fichier_excel = next(d.chemin.glob(config.get('export', 'fichier')))
+    logger.info()
 
     condition = feuille_de_temps.db.table(
         'heures').columns.exporte == False
@@ -69,38 +77,31 @@ def exporter(d: DisqueRéseau,
 
 def charger_config(config: FeuilleDeTempsConfig):
     adresse = config.get('bd', 'adresse')
-    journal.debug('Adresse de la base de données: %s', adresse)
+    logger.debug('Adresse de la base de données: %s', adresse)
 
     feuille_de_temps = FeuilleDeTemps(adresse)
-    journal.debug('Objet «feuille de temps»: %s', feuille_de_temps)
+    logger.debug('Objet «feuille de temps»: %s', feuille_de_temps)
 
     url = config.get('export', 'disque')
-    journal.debug('Disque d\'exportation: %s', url)
+    logger.debug('Disque d\'exportation: %s', url)
 
     chemin = Path(config.get('export', 'montage')).expanduser()
-    journal.debug('Chemin de montage: %s', chemin)
+    logger.debug('Chemin de montage: %s', chemin)
 
     nom = config.get('export', 'nom')
-    journal.debug('Nom de connexion: %s', nom)
+    logger.debug('Nom de connexion: %s', nom)
 
-    journal.info('Obtention du mot de passe du disque réseau...')
+    logger.info('Obtention du mot de passe du disque réseau...')
     mdp = keyring.get_password('system', f'exporter_heures_{nom}')
     if mdp is None:
         mdp = getpass.getpass('mdp: ')
         keyring.set_password('system', f'exporter_heures_{nom}', mdp)
-    journal.info('Mot de passe obtenu et sauvegardé.')
+    logger.info('Mot de passe obtenu et sauvegardé.')
 
     return url, chemin, nom, mdp, feuille_de_temps
 
-# Script
 
-
-journal = créer_journal(__name__, __file__)
-horaire = schedule.every(10).minutes
-
-
-@noter_exceptions(journal)
-def main():
+def fonction():
     chemin = Path('~/Documents/Polytechnique/Heures').expanduser()
     config = FeuilleDeTempsConfig(chemin / 'heures.cfg')
     url, chemin, nom, mdp, feuille_de_temps = charger_config(config)
@@ -108,16 +109,8 @@ def main():
         exporter(d, config, feuille_de_temps)
 
 
-def html(chemin: Path):
-    with chemin.open('w') as fichier:
-        print('<html>',
-              '    <head>',
-              f'        <title>{__name__} à {__file__}</title>',
-              '    </head>',
-              '    <body>',
-              f'        <h1>{__name__} à {__file__}</h1>',
-              f'        <p>Fonctionnel à {datetime.isoformat(datetime.now())}.</p>',
-              '    </body>',
-              '</html>',
-              sep='\n',
-              file=fichier)
+def main():
+    try:
+        fonction()
+    except Exception:
+        logger.exception('Une erreur s\'est produite.')

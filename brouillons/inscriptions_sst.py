@@ -45,3 +45,7 @@ def main():
             logger.info('Mise à jour complétée.')
         except Exception:
             logger.exception('Erreur!')
+            raise
+
+if __name__ == '__main__':
+    main()
