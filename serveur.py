@@ -92,7 +92,7 @@ class Serveur(ThreadingHTTPServer):
 
 def update(serveur: Serveur, modules: set, racine: Path):
     # Noms des fichiers et modules existants
-    chemins = set(c for c in racine.glob('*.py'))
+    chemins = set(c for c in racine.glob('**/*.py'))
     noms = set(x.stem for x in chemins)
 
     # Retirer les modules non-existants
@@ -142,7 +142,7 @@ def loop(serveur: Serveur, modules: set, racine: Path):
         thread.start()  # Démarrer le serveur
         journal.info('thread démarrée.')
 
-        schedule.run_all()  # Rouler toutes les fonctions une première fois
+        # schedule.run_all()  # Rouler toutes les fonctions une première fois
         journal.info('Programmes roulés une première fois.')
 
         # Programmer la mise à jour des modules

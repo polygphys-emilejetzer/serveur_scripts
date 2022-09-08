@@ -13,8 +13,7 @@ import schedule
 
 import pandas as pd
 
-from canari import créer_journal, noter_exceptions
-
+from polygphys.serveur.racine.canari import créer_journal, noter_exceptions
 from polygphys.outils.reseau import DisqueRéseau
 from polygphys.outils.journal import Repository
 

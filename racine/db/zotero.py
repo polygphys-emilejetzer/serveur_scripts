@@ -7,7 +7,7 @@ import schedule
 
 from datetime import datetime
 
-from canari import créer_journal, noter_exceptions
+from polygphys.serveur.racine.canari import créer_journal, noter_exceptions
 
 from polygphys.admin.inventaire.zotero.zotero import MigrationConfig, ZoteroItems
 
@@ -20,6 +20,7 @@ horaire = schedule.every(10).minutes
 
 @noter_exceptions(journal)
 def main():
+    journal.info('Charger la configuration...')
     chemin = Path('~/zotero_a_inventaire.cfg').expanduser()
     config = MigrationConfig(chemin)
 
@@ -28,9 +29,13 @@ def main():
     nom = config.get('inventaire2022', 'nom')
     mdp = config.get('inventaire2022', 'mdp')
 
+    journal.info('Charger les bases de données...')
     inventaire2022 = inventaire2022.format(nom=nom, mdp=mdp)
     bd = ZoteroItems(zotero, inventaire2022)
+
+    journal.info('Migration...')
     bd.charger()
+    journal.info('Fini.')
 
 
 def html(chemin: Path):

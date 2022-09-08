@@ -1,42 +1,26 @@
 # -*- coding: utf-8 -*-
 """Créé le Wed Aug 17 14:15:04 2022 par emilejetzer."""
 
-import subprocess
+import logging
 
 from pathlib import Path
 from datetime import datetime
 
 import schedule
 
-from canari import créer_journal, noter_exceptions
-
-from polygphys.sst.certificats_laser.nouveau_certificats import SSTLaserCertificatsConfig, SSTLaserCertificatsForm
+from polygphys.serveur.racine.canari import créer_journal, noter_exceptions
+from polygphys.sst.inscriptions_sst.inscriptions_sst import main as original
 from polygphys.outils.reseau import OneDrive
-
 
 # Script (modèle)
 
 journal = créer_journal(__name__, __file__)
-horaire = schedule.every(10).minutes
+horaire = schedule.every().friday.at('15:00:00')
 
 
 @noter_exceptions(journal)
 def main():
-    chemin_config = Path('~').expanduser() / 'certificats_laser.cfg'
-    config = SSTLaserCertificatsConfig(chemin_config)
-    dossier = OneDrive('',
-                       config.get('onedrive', 'organisation'),
-                       config.get('onedrive', 'sous-dossier'),
-                       partagé=True)
-    fichier = dossier / config.get('formulaire', 'nom')
-    config.set('formulaire', 'chemin', str(fichier))
-    formulaire = SSTLaserCertificatsForm(config)
-
-    try:
-        exporteur = subprocess.Popen(['unoconv', '--listener'])
-        formulaire.mise_à_jour()
-    finally:
-        exporteur.terminate()
+    original()
 
 
 def html(chemin: Path):
