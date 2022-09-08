@@ -33,7 +33,7 @@ handler2.setLevel(logging.INFO)
 journal.addHandler(handler)
 journal.addHandler(handler2)
 
-racine = Path('./racine').resolve()
+racine = Path('racine')  # .resolve()
 
 # Définitions importantes
 
@@ -50,7 +50,7 @@ def script_handler(racine: Path, chemins: set[Path], modules: set):
             chemin = Path(self.directory) / self.path[1:]
             sortie = chemin.with_suffix('.html') if chemin.name else chemin
             module = list(filter(lambda x: Path(
-                x.__file__) == chemin, modules))
+                x.__file__) == chemin.resolve(), modules))
 
             if chemin in chemins and module:
                 module = module[0]
@@ -93,7 +93,9 @@ class Serveur(ThreadingHTTPServer):
 def update(serveur: Serveur, modules: set, racine: Path):
     # Noms des fichiers et modules existants
     chemins = set(c for c in racine.glob('**/*.py'))
-    noms = set(x.stem for x in chemins)
+    noms = set(str(x.with_suffix('')).replace('/', '.')
+               for x in chemins
+               if not x.name.startswith('__'))
 
     # Retirer les modules non-existants
     modules -= set(module for module in modules if module.__name__ not in noms)
