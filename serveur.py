@@ -13,6 +13,10 @@ from threading import Thread
 from functools import wraps
 from typing import Callable
 
+from polygphys.outils.config import FichierConfig
+
+from polygphys.serveur.racine import WebScript, WebScriptConfig
+
 # Journalisation
 journal = logging.getLogger(__name__)
 journal.setLevel(logging.DEBUG)
@@ -70,6 +74,113 @@ def script_handler(racine: Path, chemins: set[Path], modules: set):
                 super().do_GET()
 
     return ScriptHTTPRequestHandler
+
+
+def MetaScriptHTTPRequestHandler(config, scripts):
+
+    class ScriptHTTPRequestHandler(SimpleHTTPRequestHandler):
+        racine = racine
+        scripts = scripts
+
+        def __init__(self, request, client_address, server):
+            super().__init__(request,
+                             client_address,
+                             server,
+                             directory=str(self.racine))
+
+        def do_GET(self):
+            if self.path in self.scripts:
+                try:
+                    message = str(self.script[self.path])
+                except Exception as erreur:
+                    message = f'Erreur {erreur} dans la tentative d\'exécuter {self.path}.'
+                    logging.exception(message)
+                    self.send_response(502, message)
+                    self.send_header(
+                        'Content-type', 'text/plain; charset=utf-8')
+                    self.send_header('Content-length', len(message))
+                    self.end_headers()
+                    self.wfile.write(message)
+                else:
+                    self.send_response(200)
+                    self.send_header(
+                        'Content-type', 'text/plain; charset=utf-8')
+                    self.send_header('Content-length', len(message))
+                finally:
+                    self.end_headers()
+                    self.wfile.write(message)
+            else:
+                super().do_GET()
+
+        def do_POST(self):
+            if self.path in self.scripts:
+                try:
+                    message = self.script[self.path].json()
+                except Exception as erreur:
+                    message = f'Erreur {erreur} dans la tentative d\'exécuter {self.path}.'
+                    logging.exception(message)
+                    self.send_response(502, message)
+                    self.send_header(
+                        'Content-type', 'text/plain; charset=utf-8')
+                    self.send_header('Content-length', len(message))
+                    self.end_headers()
+                    self.wfile.write(message)
+                else:
+                    self.send_response(200)
+                    self.send_header(
+                        'Content-type', 'text/plain; charset=utf-8')
+                    self.send_header('Content-length', len(message))
+                finally:
+                    self.end_headers()
+                    self.wfile.write(message)
+            else:
+                message = 'Erreur 418: Je ne suis pas une cafetière, mais je ne peux quand même pas accomplir ce que vous me demandez.'
+                self.send_response(418, message)
+                self.send_header('Content-type', 'text/plain; charset=utf-8')
+                self.send_header('Content-length', len(message))
+                self.end_headers()
+                self.wfile.write(message)
+
+    return ScriptHTTPRequestHandler
+
+
+class ScriptServeurConfig(FichierConfig):
+
+    def default(self):
+        return '''[scripts]
+    nom = chemin_vers_config.config
+
+[serveur]
+    adresse = 
+'''
+
+
+class ScriptServeur(ThreadingHTTPServer):
+
+    def __init__(self, config: ScriptServeurConfig):
+        if isinstance(config, (str, Path)):
+            self.config = ScriptServeurConfig(config)
+        else:
+            self.config = config
+
+        adresse = self.config.get('serveur', 'adresse')
+        super().__init__(adresse, self.créer_handler())
+
+    @property
+    def scripts(self):
+        return {nom: WebScript(config)
+                for nom, config in self.config.items('scripts')}
+
+    def créer_handler(self):
+        return MetaScriptHTTPRequestHandler(self.config, self.scripts)
+
+    def __call__(self):
+        try:
+            self.serve_forever()
+        except KeyboardInterrupt:
+            raise
+        finally:
+            self.shutdown()
 
 
 class Serveur(ThreadingHTTPServer):
