@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>État du script {script.nom} à {script.script}</title>
+    </head>
+    <body>
+        <h1>Description du script {script.nom}</h1>
+        <dl>
+        <dt>Chemin</dt>
+        <dd>{script.script}</dd>
+        <dt>Intervalle d'exécution</dt>
+        <dd>Aux {script.intervalle} {script.unité}.</dd>
+        </dl>
+        <hr/>
+        <h1>Suivi d'exécution</h1>
+        <p>Dernier commit: {script.journal.repo.head}</p>
+        <hr/>
+        <p>Retour à <a href="/racine/" title="Accueil">l'accueil</a>.</p>
+    </body>
+</html>

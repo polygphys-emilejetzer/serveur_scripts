@@ -4,3 +4,10 @@ __pycache__/*
 __pycache__
 .spyproject
 *.txt
+*.cfg
+*.config
+*.xlsx
+*.sqlite
+*.db
+journaux/*
+config/*
