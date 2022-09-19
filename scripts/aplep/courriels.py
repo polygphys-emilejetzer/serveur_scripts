@@ -26,11 +26,8 @@ import keyring
 
 from polygphys.outils.config import FichierConfig
 from polygphys.outils.base_de_donnees import BaseTableau
-from polygphys.serveur.racine.canari import créer_journal, noter_exceptions
 from polygphys.outils.reseau import DisqueRéseau
 
-journal = créer_journal(__name__, __file__)
-horaire = schedule.every(10).minutes
 
 CONFIGURATION_PAR_DÉFAUT: str = '''
 [messagerie]
@@ -256,50 +253,25 @@ class CourrielsTableau(BaseTableau):
         self.append(nouveaux_courriels)
 
 
-@noter_exceptions(journal)
 def main():
     dossier = Path('~').expanduser() / 'Volumes' / 'APLEP'
     infos = Path('~').expanduser() / 'Desktop' / 'aplep_k.txt'
     url, nom, mdp = [l.strip()
                      for l in infos.open().read().split('\n')]
     with DisqueRéseau(url, dossier, 'K', nom, mdp) as disque:
-        journal.info('Charger la configuration...')
         config = disque / 'Exécutif' / 'V-pAA' / \
             'Courriels' / 'config_courriels_aplep.config'
         config = CourrielsConfig(config)
-        print(config)
-
-        journal.info('Configurer la messagerie et la base de données...')
+        
         messagerie = Messagerie(config)
         tableau = CourrielsTableau(config)
 
-        journal.info('Ajouter les nouveaux messages...')
         tableau.ajouter_messagerie(messagerie)
-        journal.info('Messages ajoutés.')
 
-        journal.info('Ajouter les messages...')
         for message in messagerie.messages():
             message.sauver(disque / 'Exécutif' / 'V-pAA' / 'Notes_K' /
                            'Exécutif' / 'VPAA' / 'Courriels')
-        journal.info('Messages sauvegardés.')
 
-
-def html(chemin: Path):
-    with chemin.open('w') as fichier:
-        print('<html>',
-              '    <head>',
-              f'        <title>{__name__} à {__file__}</title>',
-              '    </head>',
-              '    <body>',
-              f'        <h1>{__name__} à {__file__}</h1>',
-              f'        <p>Fonctionnel à {datetime.isoformat(datetime.now())}.</p>',
-              '        <hr/>',
-              f'        <h1>{chemin.with_suffix(".log")}</h1>',
-              f'        <pre>{chemin.with_suffix(".log").open("r").read()}</pre>',
-              '    </body>',
-              '</html>',
-              sep='\n',
-              file=fichier)
 
 
 if __name__ == '__main__':
