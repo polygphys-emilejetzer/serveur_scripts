@@ -5,6 +5,7 @@ import os
 import sys
 import itertools
 import time
+import logging
 
 import email.message
 import email.parser
@@ -69,7 +70,7 @@ class Courriel:
                 try:
                     contenu = contenu.decode(encoding)
                 except UnicodeDecodeError:
-                    journal.exception(f'{encoding} ne fonctionne pas.')
+                    logging.exception(f'{encoding} ne fonctionne pas.')
                 else:
                     break
 
