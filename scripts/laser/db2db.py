@@ -3,43 +3,51 @@
 
 import logging
 
+import pandas as pd
+
 from pathlib import Path
 from datetime import datetime
 
 import schedule
 
-from polygphys.serveur.racine.canari import créer_journal, noter_exceptions
-from polygphys.sst.inscriptions_sst.inscriptions_sst import SSTSIMDUTInscriptionConfig, SSTSIMDUTInscriptionForm
+from polygphys.outils.base_de_donnees import BaseTableau
+from polygphys.outils.config import FichierConfig
 from polygphys.outils.reseau import OneDrive
 
-
-# Script (modèle)
-
-journal = créer_journal(__name__, __file__)
-horaire = schedule.every(10).minutes
+FICHIER_CONFIG = Path('~').expanduser() / 'laser_db2db.cfg'
 
 
-@noter_exceptions(journal)
 def main():
-    pass
+    config = FichierConfig(FICHIER_CONFIG)
 
+    adresse = config.get('db', 'adresse')
+    nom_origine = config.get('transfert', 'origine')
+    index_col = config.get('db', 'index')
+    tableau_origine = BaseTableau(adresse, nom_origine, index_col=index_col)
 
-def html(chemin: Path):
-    with chemin.open('w') as fichier:
-        print('<html>',
-              '    <head>',
-              f'        <title>{__name__} à {__file__}</title>',
-              '    </head>',
-              '    <body>',
-              f'        <h1>{__name__} à {__file__}</h1>',
-              f'        <p>Fonctionnel à {datetime.isoformat(datetime.now())}.</p>',
-              '        <hr/>',
-              f'        <h1>{chemin.with_suffix(".log")}</h1>',
-              f'        <pre>{chemin.with_suffix(".log").open("r").read()}</pre>',
-              '    </body>',
-              '</html>',
-              sep='\n',
-              file=fichier)
+    noms_destinations = config.getlist('transfert', 'destination')
+    tableaux_destinations = [BaseTableau(tableau_origine.db,
+                                         nom,
+                                         index_col=index_col)
+                             for nom in noms_destinations]
+
+    for nom in noms_destinations:
+        destination = BaseTableau(tableau_origine.db,
+                                  nom,
+                                  index_col=index_col)
+        colonnes = {y: x for x, y in config[nom].items()}
+        nouveaux = tableau_origine.select(list(colonnes.values()))\
+            .rename(colonnes)
+
+        toutes = pd.concat([destination.df, nouveaux])\
+            .drop_duplicates(subset=['matricule'],
+                             keep='first')\
+            .dropna(subset='matricule')
+
+        print(nom)
+        print(toutes.head())
+
+        destination.màj(toutes)
 
 
 if __name__ == '__main__':
