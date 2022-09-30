@@ -36,13 +36,18 @@ def main():
                                   nom,
                                   index_col=index_col)
         colonnes = {y: x for x, y in config[nom].items()}
-        nouveaux = tableau_origine.select(list(colonnes.values()))\
-            .rename(colonnes)
+        print(colonnes)
+
+        nouveaux = tableau_origine.select(list(colonnes.keys()))
+        print(nouveaux.columns)
+        nouveaux = nouveaux.rename(columns=colonnes)
+        print(nouveaux.columns)
 
         toutes = pd.concat([destination.df, nouveaux])\
             .drop_duplicates(subset=['matricule'],
                              keep='first')\
-            .dropna(subset='matricule')
+            .dropna(subset='matricule')\
+            .fillna(0)
 
         print(nom)
         print(toutes.head())

@@ -214,12 +214,14 @@ class Messagerie:
                                   c['Subject'],
                                   c['From'],
                                   c['To'],
-                                  c.parent.name] for c in self],
+                                  c.parent.name,
+                                  c.contenu] for c in self],
                                 columns=('date',
                                          'sujet',
                                          'de',
                                          'a',
-                                         'chaine'))
+                                         'chaine',
+                                         'contenu'))
 
 
 class CourrielsTableau(BaseTableau):
@@ -237,7 +239,7 @@ class CourrielsTableau(BaseTableau):
 
     def ajouter_messagerie(self, messagerie: Messagerie):
         courriels_actuels = self.df
-        nouveaux_courriels = messagerie.df
+        nouveaux_courriels = messagerie.df.fillna('')
 
         lim_db = 1000
         nouveaux_courriels.a = nouveaux_courriels.a.map(
@@ -263,16 +265,15 @@ def main():
         config = disque / 'Exécutif' / 'V-pAA' / \
             'Courriels' / 'config_courriels_aplep.config'
         config = CourrielsConfig(config)
-        
+
         messagerie = Messagerie(config)
         tableau = CourrielsTableau(config)
 
         tableau.ajouter_messagerie(messagerie)
 
         for message in messagerie.messages():
-            message.sauver(disque / 'Exécutif' / 'V-pAA' / 'Notes_K' /
-                           'Exécutif' / 'VPAA' / 'Courriels')
-
+            message.sauver(disque / 'Exécutif' / 'V-pAA' / 'Notes_K'
+                           / 'Exécutif' / 'VPAA' / 'Courriels')
 
 
 if __name__ == '__main__':

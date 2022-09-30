@@ -93,6 +93,8 @@ def main():
                     destination = d /\
                         config.get(nom_disque, 'chemin', fallback='.')
                     shutil.copy(nom_fichier, destination)
+        except FileNotFoundError:
+            cadre.loc[i, 'pdf'] = False
         except Exception:
             raise
         else:
