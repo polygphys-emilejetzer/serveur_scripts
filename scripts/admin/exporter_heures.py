@@ -5,7 +5,7 @@ import time
 import logging
 
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, date
 
 import getpass
 import keyring
@@ -54,14 +54,14 @@ def exporter(d: DisqueRéseau,
             .reset_index(drop=True)
 
         toutes_entrées.to_excel(fichier_excel,
-                                sheet_name=f'feuille de temps {datetime.date.today()}',
+                                sheet_name=f'feuille de temps {date.today()}',
                                 index=False)
 
         nouvelles_entrées.loc[:, 'exporte'] = True
         git.add(str(fichier_excel))
 
         feuille_de_temps.update(nouvelles_entrées)
-        git.commit(f'Màj automatisée le {datetime.datetime.now()}')
+        git.commit(f'Màj automatisée le {datetime.now()}')
 
 
 def charger_config(config: FeuilleDeTempsConfig):
@@ -70,13 +70,11 @@ def charger_config(config: FeuilleDeTempsConfig):
     feuille_de_temps = FeuilleDeTemps(adresse)
 
     url = config.get('export', 'disque')
-    journal.debug('Disque d\'exportation: %s', url)
 
     chemin = Path(config.get('export', 'montage')).expanduser()
 
     nom = config.get('export', 'nom')
 
-    journal.info('Obtention du mot de passe du disque réseau...')
     mdp = keyring.get_password('system', f'exporter_heures_{nom}')
     if mdp is None:
         mdp = getpass.getpass('mdp: ')
@@ -84,12 +82,14 @@ def charger_config(config: FeuilleDeTempsConfig):
 
     return url, chemin, nom, mdp, feuille_de_temps
 
+
 def main():
     chemin = Path('~/Documents/Polytechnique/Heures').expanduser()
     config = FeuilleDeTempsConfig(chemin / 'heures.cfg')
     url, chemin, nom, mdp, feuille_de_temps = charger_config(config)
     with DisqueRéseau(url, chemin, 'J', nom, mdp) as d:
         exporter(d, config, feuille_de_temps)
+
 
 if __name__ == '__main__':
     main()

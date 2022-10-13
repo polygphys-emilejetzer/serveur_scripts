@@ -8,7 +8,6 @@ import getpass
 import keyring
 
 from http import cookiejar
-from xml.etree import ElementTree
 from html.parser import HTMLParser
 from datetime import datetime
 from pathlib import Path
@@ -32,7 +31,7 @@ class AffichagesParseur(HTMLParser):
         self.externe = externe
 
         if externe:
-            self.préfixe_liens = 'www.polymtl.ca'
+            self.préfixe_liens = 'https://www.polymtl.ca'
         else:
             self.préfixe_liens = 'https://safirh.polymtl.ca/apex/polyp/'
 
@@ -58,7 +57,7 @@ class AffichagesParseur(HTMLParser):
             self.affichages.append(
                 {'url': self.préfixe_liens + attrs.get('href')})
         elif all((tag == 'a',
-                  str(attrs.get('href')).startswith('/carrieres/offre-demploi/'))):
+                  str(attrs.get('href')).startswith('/carriere/offres-demploi/'))):
             self.dans_un_lien = True
             self.affichages.append(
                 {'url': self.préfixe_liens + attrs.get('href')})

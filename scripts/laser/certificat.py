@@ -50,13 +50,15 @@ def main():
                                    ['matricule', 'nom']].iterrows():
             matricule, nom = rangée.matricule, rangée.nom
             ppt, pdf = f'{matricule}.pptx', f'{nom} {matricule}.pdf'
-            try:
-                subprocess.run(['unoconv', '-f', 'pdf', '-o', pdf, ppt])
-            except Exception:
-                raise
-            else:
-                Path(ppt).unlink()
-                cadre.loc[i, 'pdf'] = True
+            logging.debug(ppt)
+            if Path(ppt).exists():
+                try:
+                    subprocess.run(['unoconv', '-f', 'pdf', '-o', pdf, ppt])
+                except Exception:
+                    raise
+                else:
+                    Path(ppt).unlink()
+                    cadre.loc[i, 'pdf'] = True
         tableau.màj(cadre)
     finally:
         exporteur.terminate()
