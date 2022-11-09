@@ -21,8 +21,8 @@ lecteur_arguments.add_argument(
 
 arguments = lecteur_arguments.parse_args()
 
-if lecteur_arguments.init:
-    config = lecteur_arguments.config
+if arguments.init:
+    config = arguments.config
     if not config.exists():
         with CONFIG.open('r', encoding='utf-8') as original:
             with open(config, 'w', encoding='utf-8') as nouveau:
