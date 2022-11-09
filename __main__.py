@@ -22,10 +22,10 @@ lecteur_arguments.add_argument(
 arguments = lecteur_arguments.parse_args()
 
 if arguments.init:
-    config = arguments.config
+    config = Path(arguments.config)
     if not config.exists():
         with CONFIG.open('r', encoding='utf-8') as original:
-            with open(config, 'w', encoding='utf-8') as nouveau:
+            with config.open('w', encoding='utf-8') as nouveau:
                 nouveau.write(original.read())
 
     répertoire_journaux = Path('./journaux/')
