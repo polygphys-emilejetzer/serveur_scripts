@@ -14,9 +14,9 @@ lecteur_arguments = argparse.ArgumentParser(
     description='Exécuter des scripts périodiquement et obtenir leur statut.',
     epilog='Contacter Émile Jetzer @ Polytechnique Montréal pour plus de détails.')
 lecteur_arguments.add_argument(
-    '-x', '--config', dest='config', default=str(CONFIG), required=False)
+    '-c', '--config', dest='config', default=str(CONFIG), required=False)
 lecteur_arguments.add_argument(
-    '-i', '--init', dest='init', default=False, required=False)
+    '-i', '--init', dest='init', default=False, required=False, action='store_true')
 
 
 arguments = lecteur_arguments.parse_args()
