@@ -31,6 +31,7 @@ if arguments.init:
     répertoire_journaux = Path('./journaux/')
     répertoire_modèles = Path('./modèles/')
     répertoire_config = Path('./config/')
+    répertoire_racine = Path('./racine/')
 
     if not répertoire_journaux.exists():
         répertoire_journaux.mkdir()
@@ -38,6 +39,8 @@ if arguments.init:
         répertoire_modèles.mkdir()
     if not répertoire_config.exists():
         répertoire_config.mkdir()
+    if not répertoire_racine.exists():
+        répertoire_racine.mkdir()
 
     print('Il faut placer les scripts correctement dans les bons dossiers...')
 else:
