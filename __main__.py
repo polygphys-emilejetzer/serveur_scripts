@@ -10,7 +10,7 @@ from . import main
 CONFIG = Path(__file__).parent / 'serveur.cfg'
 
 lecteur_arguments = argparse.ArgumentParser(
-    prog='Serveur de scripts horaires',
+    prog='serveur_script',
     description='Exécuter des scripts périodiquement et obtenir leur statut.',
     epilog='Contacter Émile Jetzer @ Polytechnique Montréal pour plus de détails.')
 lecteur_arguments.add_argument(
